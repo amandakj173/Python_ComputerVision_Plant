@@ -7,8 +7,9 @@ import pandas as pd
 import cv2
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils import shuffle
 from keras.models import Sequential
-from keras.layers import(Layer, Input, RandomFlip, RandomRotation, RandomZoom, Conv2, MaxPooling2D, Flatten, Dense)
+from keras.layers import(Layer, Input, RandomFlip, RandomRotation, RandomZoom, RandomBrightness, Conv2D, MaxPooling2D, Flatten, Dense)
 
 # Import data
 base_dir = Path("plant_dataset")  # Set pathway where all image files stored
@@ -69,7 +70,45 @@ print(class_names)
 image_aug = Sequential([
     Input(shape=(224, 224, 3)),
     RandomFlip("horizontal"),
-    RandomRotation("0.1"),
+    RandomRotation(0.1),
     RandomZoom(height_factor = 0.2, width_factor = 0.2),
     RandomBrightness(factor = 0.2),
 ], name = "image_aug")
+
+
+# OBJECT CLASSIFICATION
+
+# CNN Architecture
+cnn_model = Sequential([
+    image_aug,  # Use augmented image dataset
+    Rescaling(1./255)  # Normalise 0-255 inputs
+    Conv2D(32, (3,3), activation = "relu"),
+    MaxPooling2D(),
+    Conv2D(64, (3,3), activation = "relu"),
+    MaxPooling2D(),
+    Flatten(),
+    Dense(64, activation = "relu"),
+    Dense(len(class_names), activation = "softmax")
+])
+
+# Summarise Architecture
+cnn_model.summary()
+
+# Compile Model
+cnn_model.compile(
+    optimizer = "adam",  # Dynamically adjust learning rate during training
+    loss = "sparse_categorical_crossentropy",  # Loss function used when targets integer-coded labels
+    metrics = ["accuracy"]  # Measure % correctly classified image during training & validation
+)
+
+
+# Train Model
+history = cnn_model.fit(
+    process_train,  # Uses training images
+    train_label,  # Uses label-encoded class targets
+    epochs = 15,  # Performs 15 full passes over dataset w. data_aug generating new random tranformations each time
+    batch_size = 4  # Give 5-6 steps per epoch
+    validation_split = 0.3,  # Hold out 30% data for validation
+    verbose = 2
+)
+
