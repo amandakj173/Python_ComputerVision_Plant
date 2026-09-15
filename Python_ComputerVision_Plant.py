@@ -2,11 +2,11 @@
 
 # Import packages
 from pathlib import Path
-from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import pandas as pd
 import cv2
 import tensorflow as tf
+from sklearn.preprocessing import LabelEncoder
 from keras.models import Sequential
 from keras.layers import(Layer, Input, RandomFlip, RandomRotation, RandomZoom, Conv2, MaxPooling2D, Flatten, Dense)
 
@@ -39,3 +39,16 @@ test_df = pd.DataFrame({"file_path":test_ds})
 # Check imported data
 print("Train Samples:", train_df["label"].value_counts())
 print("Test Samples:", len(test_df))
+
+
+# IMAGE PROCESSING
+
+def processing(file_path):
+	img = cv2.imread(file_path)  # Load image from path
+	img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert RGB to BGR (open CV convention)
+	img = cv2.resize(img, (224, 224))  # Resize to standard image conventions
+	img = img/255.0  # Normalise pizel values to range 0.0-1.0
+	return img
+
+process_train = np.array([processing(fp) for fp in train_df["file_path"]])  # Apply to training df
+process_test = np.array([processing(fp) for fp in test_df["file_path"]])  # Apply to testing df
