@@ -64,3 +64,12 @@ train_label = label_encoder.fit_transform(train_label)
 
 class_names = label_encoder.classes_
 print(class_names)
+
+# Image Augmentation
+image_aug = Sequential([
+    Input(shape=(224, 224, 3)),
+    RandomFlip("horizontal"),
+    RandomRotation("0.1"),
+    RandomZoom(height_factor = 0.2, width_factor = 0.2),
+    RandomBrightness(factor = 0.2),
+], name = "image_aug")
