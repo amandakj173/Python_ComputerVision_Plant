@@ -52,3 +52,15 @@ def processing(file_path):
 
 process_train = np.array([processing(fp) for fp in train_df["file_path"]])  # Apply to training df
 process_test = np.array([processing(fp) for fp in test_df["file_path"]])  # Apply to testing df
+
+
+# OBJECT DETECTION
+
+# Encode target labels
+train_label = train_df["label"].values
+
+label_encoder = LabelEncoder()
+train_label = label_encoder.fit_transform(train_label)
+
+class_names = label_encoder.classes_
+print(class_names)
