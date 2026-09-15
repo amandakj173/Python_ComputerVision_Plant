@@ -9,7 +9,7 @@ import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
 from keras.models import Sequential
-from keras.layers import(Layer, Input, RandomFlip, RandomRotation, RandomZoom, RandomBrightness, Conv2D, MaxPooling2D, Flatten, Dense)
+from keras.layers import(Rescaling, Input, RandomFlip, RandomRotation, RandomZoom, RandomBrightness, Conv2D, MaxPooling2D, Flatten, Dense)
 
 # Import data
 base_dir = Path("plant_dataset")  # Set pathway where all image files stored
@@ -48,7 +48,6 @@ def processing(file_path):
 	img = cv2.imread(file_path)  # Load image from path
 	img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert RGB to BGR (open CV convention)
 	img = cv2.resize(img, (224, 224))  # Resize to standard image conventions
-	img = img/255.0  # Normalise pizel values to range 0.0-1.0
 	return img
 
 process_train = np.array([processing(fp) for fp in train_df["file_path"]])  # Apply to training df
@@ -86,10 +85,12 @@ image_aug = Sequential([
 # CNN Architecture
 cnn_model = Sequential([
     image_aug,  # Use augmented image dataset
-    Rescaling(1./255)  # Normalise 0-255 inputs
+    Rescaling(1./255),  # Normalise 0-255 inputs
     Conv2D(32, (3,3), activation = "relu"),
     MaxPooling2D(),
     Conv2D(64, (3,3), activation = "relu"),
+    MaxPooling2D(),
+    Conv2D(32, (3,3), activation = "relu"),
     MaxPooling2D(),
     Flatten(),
     Dense(64, activation = "relu"),
@@ -111,9 +112,22 @@ cnn_model.compile(
 history = cnn_model.fit(
     process_train,  # Uses training images
     train_label,  # Uses label-encoded class targets
-    epochs = 15,  # Performs 15 full passes over dataset w. data_aug generating new random tranformations each time
-    batch_size = 4  # Give 5-6 steps per epoch
-    validation_split = 0.3,  # Hold out 30% data for validation
+    epochs = 50,  # Performs 15 full passes over dataset w. data_aug generating new random tranformations each time
+    batch_size = 4,  # Give 5-6 steps per epoch
+    validation_split = 0.2,  # Hold out 20% data for validation
     verbose = 2
 )
 
+
+# MODEL EVALUATION
+
+# Run inference on test images
+pred_raw = cnn_model.predict(process_test)  # Run prediction
+pred_indices = np.argmax(pred_raw, axis = 1)  # Convert probabilities to predicted class indices
+
+# Map predicted indices to string labels
+test_df["predicted_label"] = [class_names[i] for i in pred_indices]
+test_df["confidence"] = np.max(pred_raw, axis = 1) * 100
+
+print("\nTest Predictions:")
+print(test_df[["file_path", "predicted_label", "confidence"]])
