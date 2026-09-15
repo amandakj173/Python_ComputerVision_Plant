@@ -66,6 +66,11 @@ train_label = label_encoder.fit_transform(train_label)
 class_names = label_encoder.classes_
 print(class_names)
 
+# Shuffle Train Images & Labels
+process_train, train_label = shuffle(
+    process_train, train_label, random_state = 42
+)
+
 # Image Augmentation
 image_aug = Sequential([
     Input(shape=(224, 224, 3)),
